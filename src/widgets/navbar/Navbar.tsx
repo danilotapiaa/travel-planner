@@ -1,6 +1,7 @@
 import { createClient } from '@/shared/api/supabase/server'
 import { logout } from '@/app/login/actions'
 import { LogOut, Map, Plane, CalendarDays } from 'lucide-react'
+import Link from 'next/link'
 
 export async function Navbar() {
   const supabase = await createClient()
@@ -12,17 +13,17 @@ export async function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo y Enlaces */}
           <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2 text-white font-bold text-lg">
+            <Link href="/" className="flex items-center gap-2 text-white font-bold text-lg hover:text-blue-400 transition-colors">
               <Map className="h-6 w-6 text-blue-500" />
               <span>Bogotá '26</span>
-            </div>
-            <div className="hidden md:flex gap-4">
-              <span className="flex items-center gap-1 text-sm font-medium text-blue-400 border-b-2 border-blue-500 py-5">
+            </Link>
+            <div className="hidden md:flex gap-6">
+              <Link href="/" className="flex items-center gap-1 text-sm font-medium text-slate-300 hover:text-blue-400 py-5 transition-colors border-b-2 border-transparent hover:border-blue-500">
                 <CalendarDays className="h-4 w-4" /> Dashboard
-              </span>
-              <span className="flex items-center gap-1 text-sm font-medium text-slate-400 py-5 hover:text-slate-200 cursor-pointer transition-colors">
+              </Link>
+              <Link href="/itinerario" className="flex items-center gap-1 text-sm font-medium text-slate-300 hover:text-blue-400 py-5 transition-colors border-b-2 border-transparent hover:border-blue-500">
                 <Plane className="h-4 w-4" /> Itinerario
-              </span>
+              </Link>
             </div>
           </div>
 
