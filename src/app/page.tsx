@@ -4,6 +4,7 @@ import { Plane } from "lucide-react";
 import { TripMap } from '@/widgets/map/TripMap'
 import { CreateActivityForm } from '@/features/activities/ui/CreateActivityForm'
 import { PendingActivitiesWidget } from '@/widgets/activities/PendingActivitiesWidget'
+import { BudgetWidget } from '@/widgets/budget/BudgetWidget'
 export default function Home() {
   // Cálculo de cuenta regresiva
   const tripDate = new Date('2026-07-15T16:40:00-05:00')
@@ -160,6 +161,10 @@ export default function Home() {
           <CreateActivityForm />
 
         </div>
+      </div>
+
+      <div className="mt-8">
+        <BudgetWidget />
       </div>
 
       {/* Sección del Mapa (Fase 3) */}
