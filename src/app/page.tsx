@@ -5,6 +5,7 @@ import { TripMap } from '@/widgets/map/TripMap'
 import { CreateActivityForm } from '@/features/activities/ui/CreateActivityForm'
 import { PendingActivitiesWidget } from '@/widgets/activities/PendingActivitiesWidget'
 import { BudgetWidget } from '@/widgets/budget/BudgetWidget'
+import { ItineraryWidget } from '@/widgets/itinerary/ItineraryWidget'
 export default function Home() {
   // Cálculo de cuenta regresiva
   const tripDate = new Date('2026-07-15T16:40:00-05:00')
@@ -176,6 +177,9 @@ export default function Home() {
           <TripMap />
         </div>
       </div>
+
+      {/* Calendario Cronológico (Fase 6) */}
+      <ItineraryWidget />
 
     </div>
   )
