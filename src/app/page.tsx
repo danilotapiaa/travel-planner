@@ -1,6 +1,8 @@
 import { PlaneTakeoff, PlaneLanding, MapPin, Ticket, Clock, Music } from 'lucide-react'
 import { differenceInDays } from 'date-fns'
-
+// Al inicio de tu archivo src/app/page.tsx, agrega:
+import { Plane } from "lucide-react";
+import { TripMap } from '@/widgets/map/TripMap'
 export default function Home() {
   // Cálculo de cuenta regresiva
   const tripDate = new Date('2026-07-15T16:40:00-05:00')
@@ -154,6 +156,17 @@ export default function Home() {
 
         </div>
       </div>
+
+      {/* Sección del Mapa (Fase 3) */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2 mb-4">
+          <MapPin className="h-5 w-5 text-slate-400" /> Mapa del Viaje
+        </h2>
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-sm">
+          <TripMap />
+        </div>
+      </div>
+
     </div>
   )
 }
