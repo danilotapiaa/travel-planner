@@ -57,7 +57,7 @@ export function ActivityVoteCard({ activity, currentUserId }: ActivityProps) {
         </div>
         <div className="flex items-center gap-1.5 text-slate-300 bg-slate-950/50 p-2 rounded-md border border-slate-800">
           <DollarSign className="h-4 w-4 text-emerald-500" />
-          <span>{activity.price > 0 ? `${activity.price} USD` : 'Gratis'}</span>
+          <span>{(activity.price ?? 0) > 0 ? `${activity.price} USD` : 'Gratis'}</span>
         </div>
       </div>
 
