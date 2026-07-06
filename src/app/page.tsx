@@ -12,21 +12,21 @@ export default function Home() {
   const daysLeft = differenceInDays(tripDate, today)
 
   return (
-    <div className="space-y-8 flex flex-col pb-10">
+    <div className="space-y-6 sm:space-y-8 flex flex-col pb-10 px-4 sm:px-6 lg:px-0">
       
       {/* Header del Dashboard */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Resumen del Viaje</h1>
-          <p className="text-slate-400 mt-1">Tu itinerario y próximos eventos están bajo control.</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-4 sm:px-0">
+        <div className="w-full md:w-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Resumen del Viaje</h1>
+          <p className="text-sm sm:text-base text-slate-400 mt-1">Tu itinerario y próximos eventos están bajo control.</p>
         </div>
         
         {/* Widget Cuenta Regresiva */}
-        <div className="flex items-center gap-3 bg-blue-900/20 border border-blue-800/50 px-5 py-3 rounded-xl shadow-lg shadow-blue-900/10">
-          <Clock className="h-6 w-6 text-blue-400" />
+        <div className="flex items-center gap-3 bg-blue-900/20 border border-blue-800/50 px-4 sm:px-5 py-3 rounded-xl shadow-lg shadow-blue-900/10 w-full sm:w-auto">
+          <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400 flex-shrink-0" />
           <div>
             <p className="text-xs font-medium text-blue-300 uppercase tracking-wider">Faltan</p>
-            <p className="text-2xl font-bold text-white leading-none">{daysLeft} días</p>
+            <p className="text-xl sm:text-2xl font-bold text-white leading-none">{daysLeft} días</p>
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function Home() {
                 <h3 className="font-medium text-lg text-white">Airbnb Bogotá</h3>
                 <p className="text-slate-400 mt-1">2717 Diagonal 61D, Bogotá 111221</p>
                 
-                <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-sm">
                   <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
                     <span className="text-slate-500 block mb-1">Check-in</span>
                     <span className="text-white font-medium">Mié 15 Jul • ~22:00</span>
