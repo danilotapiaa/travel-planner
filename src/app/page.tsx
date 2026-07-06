@@ -3,6 +3,7 @@ import { differenceInDays } from 'date-fns'
 import { Plane } from "lucide-react";
 import { TripMap } from '@/widgets/map/TripMap'
 import { CreateActivityForm } from '@/features/activities/ui/CreateActivityForm'
+import { PendingActivitiesWidget } from '@/widgets/activities/PendingActivitiesWidget'
 export default function Home() {
   // Cálculo de cuenta regresiva
   const tripDate = new Date('2026-07-15T16:40:00-05:00')
@@ -28,6 +29,8 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      <PendingActivitiesWidget />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
