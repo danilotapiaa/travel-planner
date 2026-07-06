@@ -1,8 +1,8 @@
 import { PlaneTakeoff, PlaneLanding, MapPin, Ticket, Clock, Music } from 'lucide-react'
 import { differenceInDays } from 'date-fns'
-// Al inicio de tu archivo src/app/page.tsx, agrega:
 import { Plane } from "lucide-react";
 import { TripMap } from '@/widgets/map/TripMap'
+import { CreateActivityForm } from '@/features/activities/ui/CreateActivityForm'
 export default function Home() {
   // Cálculo de cuenta regresiva
   const tripDate = new Date('2026-07-15T16:40:00-05:00')
@@ -153,6 +153,8 @@ export default function Home() {
               </div>
             </div>
           </div>
+
+          <CreateActivityForm />
 
         </div>
       </div>
