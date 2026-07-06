@@ -18,6 +18,7 @@ export async function proposeActivity(formData: FormData) {
     latitude: parseFloat(formData.get('latitude') as string),
     longitude: parseFloat(formData.get('longitude') as string),
     place_id: formData.get('place_name') as string,
+    website_url: formData.get('website_url') as string || null, // NUEVO
     created_by: user.id,
     status: 'PENDIENTE'
   })
@@ -38,18 +39,17 @@ export async function editActivity(activityId: string, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Usuario no autenticado')
 
-  // 1. Actualizar datos (incluyendo duración) y asignar la autoría a quien lo edita
   await supabase.from('activities').update({
     title: formData.get('title') as string,
     description: formData.get('description') as string,
     price: parseFloat(formData.get('price') as string) || 0,
     start_time: formData.get('start_time') as string,
     duration_minutes: parseInt(formData.get('duration_minutes') as string) || null,
+    website_url: formData.get('website_url') as string || null, // NUEVO
     status: 'PENDIENTE',
     created_by: user.id 
   }).eq('id', activityId)
 
-  // 2. Borrar las confirmaciones anteriores para que el otro usuario deba aceptar la nueva propuesta
   await supabase.from('activity_approvals').delete().eq('activity_id', activityId)
   
   revalidatePath('/', 'layout')

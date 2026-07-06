@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MapPin, DollarSign, CheckCircle, XCircle, Clock, Trash2, Edit3, Car, Footprints, Loader2, X } from 'lucide-react'
+import { MapPin, DollarSign, CheckCircle, XCircle, Clock, Trash2, Edit3, Car, Footprints, Loader2, X, Globe, ExternalLink } from 'lucide-react'
 import { voteActivity, deleteActivity, editActivity } from '../actions'
 
 type ActivityProps = {
@@ -19,7 +19,6 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
   const isCreator = activity.created_by === currentUserId
   const myVote = activity.activity_approvals?.find((a: any) => a.user_id === currentUserId)
 
-  // Extraer fecha y horas para pre-llenar el formulario de edición (Evitando problemas de zona horaria)
   let defaultDate = ""
   let defaultTime = ""
   let defaultEndTime = ""
@@ -75,7 +74,9 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
     setIsEditing(false)
   }
 
-  // --- VISTA DE EDICIÓN ---
+  // Generador de Link de Google Maps
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${activity.latitude},${activity.longitude}`
+
   if (isEditing) {
     return (
       <div className="bg-slate-900 border border-blue-800 rounded-xl p-4 shadow-lg shadow-blue-900/10 relative">
@@ -121,6 +122,12 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
             <input name="price" type="number" step="0.01" defaultValue={activity.price} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
           </div>
 
+          {/* NUEVO: Campo de edición para el sitio web */}
+          <div>
+            <label className="text-slate-400 text-xs mb-1 block">Enlace Web (Opcional)</label>
+            <input name="website_url" type="url" defaultValue={activity.website_url || ''} placeholder="https://..." className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+          </div>
+
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Descripción / Notas</label>
             <textarea name="description" defaultValue={activity.description} rows={2} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
@@ -134,12 +141,10 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
     )
   }
 
-  // --- VISTA NORMAL DE LA TARJETA ---
   return (
     <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 shadow-md relative overflow-hidden group hover:border-slate-600 transition-colors">
       <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500"></div>
       
-      {/* Botones de acción rápidos: Ahora ambos usuarios ven "Editar" y "Borrar" */}
       <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 pl-2 pb-2 rounded-bl-lg">
         <button onClick={() => setIsEditing(true)} className="p-1.5 text-slate-400 hover:text-blue-400 bg-slate-800 rounded-md transition-colors" title="Editar Propuesta">
           <Edit3 className="h-4 w-4" />
@@ -159,6 +164,18 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
       )}
 
       <p className="text-sm text-slate-400 mb-4">{activity.description}</p>
+
+      {/* NUEVO: Botones para abrir en Google Maps y Sitio Web */}
+      <div className="flex flex-wrap gap-2 mb-4 text-xs">
+        <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 bg-blue-950/40 px-2.5 py-1.5 rounded-md border border-blue-900/50 transition-colors">
+          <MapPin className="h-3.5 w-3.5" /> Abrir en Maps
+        </a>
+        {activity.website_url && (
+          <a href={activity.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 px-2.5 py-1.5 rounded-md border border-emerald-900/50 transition-colors">
+            <Globe className="h-3.5 w-3.5" /> Ver web
+          </a>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
         <div className="flex items-center gap-1.5 text-slate-300 bg-slate-950/50 p-2 rounded-md border border-slate-800">

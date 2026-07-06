@@ -44,11 +44,10 @@ export function CreateActivityForm() {
     
     const selectedDate = formData.get('trip_date') as string
     const selectedTime = formData.get('trip_time') as string
-    const endTime = formData.get('end_time') as string // NUEVO: Capturar hora fin
+    const endTime = formData.get('end_time') as string
 
     const isoDateTime = `${selectedDate}T${selectedTime}:00-05:00`
     
-    // Calculamos la duración en minutos para guardarla
     if (endTime) {
       const start = new Date(isoDateTime)
       const end = new Date(`${selectedDate}T${endTime}:00-05:00`)
@@ -121,7 +120,6 @@ export function CreateActivityForm() {
                 <option value="2026-07-19">Domingo 19 de Julio</option>
               </select>
             </div>
-            {/* NUEVO: Selectores de Hora de Inicio y Fin */}
             <div className="sm:col-span-1">
               <label className="text-sm font-medium text-slate-300">Hora Inicio</label>
               <input name="trip_time" type="time" required className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -151,6 +149,12 @@ export function CreateActivityForm() {
               <label className="text-sm font-medium text-slate-300">Precio Estimado (USD)</label>
               <input name="price" type="number" step="0.01" min="0" placeholder="0.00" className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
+          </div>
+
+          {/* NUEVO: Campo de Web Opcional */}
+          <div>
+            <label className="text-sm font-medium text-slate-300">Enlace Web (Opcional)</label>
+            <input name="website_url" type="url" placeholder="https://..." className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div>

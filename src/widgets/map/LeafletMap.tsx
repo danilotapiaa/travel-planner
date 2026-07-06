@@ -9,7 +9,7 @@ type MapProps = {
 }
 
 const defaultIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png', // Azul
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
@@ -18,7 +18,7 @@ const defaultIcon = L.icon({
 })
 
 const pinkIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png', // Concierto
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -26,7 +26,7 @@ const pinkIcon = L.icon({
 })
 
 const yellowIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png', // Pendientes
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -34,7 +34,7 @@ const yellowIcon = L.icon({
 })
 
 const greenIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', // Airbnb
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -47,7 +47,6 @@ export default function LeafletMap({ activities }: MapProps) {
     { id: 'concierto', lat: 4.6485, lng: -74.0776, title: 'Concierto Rosalía', icon: pinkIcon }
   ]
 
-  // Combinamos los fijos con los dinámicos de Supabase
   const dynamicMarkers = activities.map(act => ({
     id: act.id,
     lat: act.lat,
@@ -66,7 +65,20 @@ export default function LeafletMap({ activities }: MapProps) {
       />
       {allMarkers.map((marker) => (
         <Marker key={marker.id} position={[marker.lat, marker.lng]} icon={marker.icon}>
-          <Popup className="text-slate-900"><strong>{marker.title}</strong></Popup>
+          <Popup className="text-slate-900 min-w-[150px]">
+            <div className="flex flex-col gap-2">
+              <strong className="text-base">{marker.title}</strong>
+              {/* NUEVO: Link para abrir directamente en Google Maps */}
+              <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${marker.lat},${marker.lng}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
+              >
+                📍 Abrir en Google Maps
+              </a>
+            </div>
+          </Popup>
         </Marker>
       ))}
     </MapContainer>
