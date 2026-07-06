@@ -1,11 +1,28 @@
 import { PlaneTakeoff, PlaneLanding, MapPin, Ticket, Clock, Music } from 'lucide-react'
 import { differenceInDays } from 'date-fns'
-import { Plane } from "lucide-react";
+import { Plane } from "lucide-react"
 import { TripMap } from '@/widgets/map/TripMap'
 import { CreateActivityForm } from '@/features/activities/ui/CreateActivityForm'
 import { PendingActivitiesWidget } from '@/widgets/activities/PendingActivitiesWidget'
 import { BudgetWidget } from '@/widgets/budget/BudgetWidget'
-export default function Home() {
+import { createClient } from '@/shared/api/supabase/server' // <-- Importación añadida
+
+export default async function Home() { // <-- Ahora es async para poder leer la base de datos
+  // NUEVO: Obtener actividades de la base de datos para el mapa
+  const supabase = await createClient()
+  const { data: dbActivities } = await supabase
+    .from('activities')
+    .select('id, latitude, longitude, title, status')
+    .in('status', ['APROBADA', 'PENDIENTE'])
+
+  const mapActivities = (dbActivities || []).map(act => ({
+    id: act.id,
+    lat: act.latitude,
+    lng: act.longitude,
+    title: act.title,
+    isPending: act.status === 'PENDIENTE'
+  }))
+
   // Cálculo de cuenta regresiva
   const tripDate = new Date('2026-07-15T16:40:00-05:00')
   const today = new Date()
@@ -173,7 +190,8 @@ export default function Home() {
           <MapPin className="h-5 w-5 text-slate-400" /> Mapa del Viaje
         </h2>
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-sm">
-          <TripMap />
+          {/* <-- AQUÍ SE PASA LA DATA AL MAPA --> */}
+          <TripMap activities={mapActivities} />
         </div>
       </div>
 

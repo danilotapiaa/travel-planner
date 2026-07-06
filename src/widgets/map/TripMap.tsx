@@ -2,7 +2,11 @@
 
 import dynamic from 'next/dynamic'
 
-// Importación dinámica apagando el SSR
+// Definimos lo que el mapa va a recibir
+type MapProps = {
+  activities: { id: string, lat: number, lng: number, title: string, isPending: boolean }[]
+}
+
 const Map = dynamic(() => import('./LeafletMap'), {
   ssr: false,
   loading: () => (
@@ -12,10 +16,10 @@ const Map = dynamic(() => import('./LeafletMap'), {
   )
 })
 
-export function TripMap() {
+export function TripMap({ activities = [] }: MapProps) {
   return (
     <div className="rounded-2xl border border-slate-800 shadow-xl overflow-hidden relative z-0">
-      <Map />
+      <Map activities={activities} />
     </div>
   )
 }

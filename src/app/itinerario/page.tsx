@@ -7,15 +7,15 @@ import { getTravelEstimates } from '@/features/routing/osrm'
 export default async function ItineraryPage() {
   const supabase = await createClient()
 
-  // Obtener actividades aprobadas
-  const { data: approvedActivities } = await supabase
+  // 1. Obtener actividades APROBADAS y PENDIENTES
+  const { data: routeActivities } = await supabase
     .from('activities')
     .select('*')
-    .eq('status', 'APROBADA')
+    .in('status', ['APROBADA', 'PENDIENTE'])
 
-  // Procesar rutas para actividades que tengan coordenadas
+  // 2. Procesar rutas para actividades que tengan coordenadas
   const activitiesWithRoutes = await Promise.all(
-    (approvedActivities || []).map(async (act) => {
+    (routeActivities || []).map(async (act) => {
       let routes = null
       if (act.latitude && act.longitude) {
         routes = await getTravelEstimates(act.latitude, act.longitude)
@@ -26,18 +26,18 @@ export default async function ItineraryPage() {
         id: act.id,
         date: format(actDate, 'yyyy-MM-dd'),
         time: format(actDate, 'HH:mm'),
-        title: act.title,
+        title: act.title + (act.status === 'PENDIENTE' ? ' (Por Aprobar)' : ''),
         description: act.place_id ? act.place_id.split(',')[0] : act.category,
-        type: 'activity',
+        type: act.status === 'PENDIENTE' ? 'reminder' : 'activity', // 'reminder' aplica el color amarillo
         routes
       }
     })
   )
 
-  // Calcular ruta para el concierto (Movistar Arena)
+  // 3. Calcular ruta para el concierto (Movistar Arena)
   const concertRoutes = await getTravelEstimates(4.6485, -74.0776)
 
-  // Eventos fijos
+  // 4. Eventos fijos (Se mantiene el código quemado como solicitaste)
   const fixedEvents = [
     { id: 'rem-1', date: '2026-07-15', time: '13:40', title: 'Salida al Aeropuerto', description: '3 horas de anticipación en UIO', type: 'reminder' },
     { id: 'fli-1', date: '2026-07-15', time: '16:40', title: 'Vuelo UIO - GYE', description: 'Avianca AV1664', type: 'flight' },
@@ -49,7 +49,7 @@ export default async function ItineraryPage() {
     { id: 'fli-3', date: '2026-07-19', time: '11:25', title: 'Vuelo BOG - UIO', description: 'Avianca AV117', type: 'flight' },
   ]
 
-  // Unir y agrupar todo
+  // 5. Unir y agrupar todo
   const allEvents = [...fixedEvents, ...activitiesWithRoutes]
   const groupedEvents = allEvents.reduce((acc, event) => {
     if (!acc[event.date]) acc[event.date] = []
