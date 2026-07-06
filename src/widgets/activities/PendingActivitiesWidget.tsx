@@ -9,26 +9,30 @@ export async function PendingActivitiesWidget() {
 
   if (!user) return null
 
+  // Obtener actividades pendientes
   const { data: pendingActivities } = await supabase
     .from('activities')
-    .select(`
-      *,
-      activity_approvals (
-        user_id,
-        status
-      )
-    `)
+    .select(`*, activity_approvals (user_id, status)`)
     .eq('status', 'PENDIENTE')
     .order('created_at', { ascending: false })
 
   if (!pendingActivities || pendingActivities.length === 0) return null
 
-  // NUEVO: Añadimos (activity: any) para evitar el error de TypeScript
+  // Obtener TODAS las actividades aprobadas para el listado de ubicaciones
+  const { data: approvedActivities } = await supabase.from('activities').select('id, title, latitude, longitude').eq('status', 'APROBADA')
+
+  // Construir las ubicaciones disponibles para calcular rutas
+  const availableOrigins = [
+    { id: 'airbnb', name: 'Airbnb (Campamento Base)', lat: 4.6460, lng: -74.0780 },
+    { id: 'concierto', name: 'Concierto Rosalía (Movistar Arena)', lat: 4.6485, lng: -74.0776 },
+    ...(approvedActivities || []).filter(a => a.latitude).map(a => ({ id: a.id, name: a.title, lat: a.latitude, lng: a.longitude }))
+  ]
+
   const activitiesWithRouting = await Promise.all(
     pendingActivities.map(async (activity: any) => {
       let routing = null
       if (activity.latitude && activity.longitude) {
-        routing = await getTravelEstimates(activity.latitude, activity.longitude)
+        routing = await getTravelEstimates(activity.latitude, activity.longitude) // Por defecto calcula desde el Airbnb
       }
       return { ...activity, routing }
     })
@@ -44,13 +48,13 @@ export async function PendingActivitiesWidget() {
       </h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* NUEVO: Añadimos (activity: any) aquí también */}
         {activitiesWithRouting.map((activity: any) => (
           <ActivityVoteCard 
             key={activity.id} 
             activity={activity} 
             currentUserId={user.id} 
             routing={activity.routing}
+            locations={availableOrigins} // NUEVO: Pasamos las ubicaciones
           />
         ))}
       </div>

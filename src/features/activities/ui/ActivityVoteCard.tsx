@@ -3,48 +3,46 @@
 import { useState } from 'react'
 import { MapPin, DollarSign, CheckCircle, XCircle, Clock, Trash2, Edit3, Car, Footprints, Loader2, X, Globe } from 'lucide-react'
 import { voteActivity, deleteActivity, editActivity } from '../actions'
+import { getTravelEstimates } from '@/features/routing/osrm'
 
 type ActivityProps = {
   activity: any
   currentUserId: string
   routing?: { car: number, walk: number } | null 
+  locations?: { id: string, name: string, lat: number, lng: number }[] // NUEVO: Lugares disponibles para calcular rutas
 }
 
-export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityProps) {
+export function ActivityVoteCard({ activity, currentUserId, routing, locations = [] }: ActivityProps) {
   const [isVoting, setIsVoting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   
+  // Estados para el cálculo de rutas dinámico
+  const [origin, setOrigin] = useState("4.6460,-74.0780") // Airbnb por defecto
+  const [dynamicRouting, setDynamicRouting] = useState(routing)
+  const [isLoadingRoute, setIsLoadingRoute] = useState(false)
+  
   const isCreator = activity.created_by === currentUserId
   const myVote = activity.activity_approvals?.find((a: any) => a.user_id === currentUserId)
 
+  // Cálculo de horas
   let defaultDate = ""
   let defaultTime = ""
   let defaultEndTime = ""
 
   if (activity.start_time) {
     const dateObj = new Date(activity.start_time)
-    
-    // NUEVO: Forzamos la extracción de datos bajo la zona horaria UTC-5 para evitar desfases
     const fmt = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Bogota',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
+      timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
     })
     
     const parts = fmt.formatToParts(dateObj)
     const getPart = (type: string) => parts.find(p => p.type === type)?.value
     
     defaultDate = `${getPart('year')}-${getPart('month')}-${getPart('day')}`
-    
     let hour = getPart('hour') || '00'
     if (hour === '24') hour = '00'
-    
     defaultTime = `${hour}:${getPart('minute')}`
 
     if (activity.duration_minutes) {
@@ -87,10 +85,19 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
     }
     
     formData.append('start_time', isoDateTime)
-
     await editActivity(activity.id, formData)
     setIsSaving(false)
     setIsEditing(false)
+  }
+
+  const handleOriginChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value
+    setOrigin(val)
+    setIsLoadingRoute(true)
+    const [origLat, origLng] = val.split(',')
+    const res = await getTravelEstimates(activity.latitude, activity.longitude, parseFloat(origLat), parseFloat(origLng))
+    setDynamicRouting(res)
+    setIsLoadingRoute(false)
   }
 
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${activity.latitude},${activity.longitude}`
@@ -99,20 +106,14 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
     return (
       <div className="bg-slate-900 border border-blue-800 rounded-xl p-4 shadow-lg shadow-blue-900/10 relative">
         <div className="flex justify-between items-center mb-4">
-          <h4 className="font-semibold text-white flex items-center gap-2">
-            <Edit3 className="h-4 w-4 text-blue-400" /> Editar Propuesta
-          </h4>
-          <button onClick={() => setIsEditing(false)} className="text-slate-500 hover:text-white transition-colors">
-            <X className="h-5 w-5" />
-          </button>
+          <h4 className="font-semibold text-white flex items-center gap-2"><Edit3 className="h-4 w-4 text-blue-400" /> Editar Propuesta</h4>
+          <button onClick={() => setIsEditing(false)} className="text-slate-500 hover:text-white transition-colors"><X className="h-5 w-5" /></button>
         </div>
-
         <form onSubmit={handleEditSubmit} className="space-y-3 text-sm">
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Título</label>
             <input name="title" defaultValue={activity.title} required className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
           </div>
-          
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Día</label>
             <select name="trip_date" defaultValue={defaultDate} required className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
@@ -123,7 +124,6 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
               <option value="2026-07-19">Domingo 19 de Julio</option>
             </select>
           </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-slate-400 text-xs mb-1 block">Hora Inicio</label>
@@ -134,23 +134,18 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
               <input name="end_time" type="time" defaultValue={defaultEndTime} required className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
             </div>
           </div>
-
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Precio Estimado (USD)</label>
-            {/* type text para evitar errores del navegador en dispositivos móviles al usar coma */}
             <input name="price" type="text" inputMode="decimal" defaultValue={activity.price} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
           </div>
-
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Enlace Web (Opcional)</label>
             <input name="website_url" type="url" defaultValue={activity.website_url || ''} placeholder="https://..." className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
           </div>
-
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Descripción / Notas</label>
             <textarea name="description" defaultValue={activity.description} rows={2} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
           </div>
-
           <button type="submit" disabled={isSaving} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-md transition-colors disabled:opacity-50 flex justify-center items-center gap-2 mt-2">
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Guardar y Renegociar'}
           </button>
@@ -161,9 +156,9 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
 
   return (
     <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 shadow-md relative overflow-hidden group hover:border-slate-600 transition-colors">
-      <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500"></div>
+      <div className={`absolute top-0 left-0 w-1 h-full ${activity.status === 'PENDIENTE' ? 'bg-yellow-500' : 'bg-purple-500'}`}></div>
       
-      <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 pl-2 pb-2 rounded-bl-lg">
+      <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 pl-2 pb-2 rounded-bl-lg z-10">
         <button onClick={() => setIsEditing(true)} className="p-1.5 text-slate-400 hover:text-blue-400 bg-slate-800 rounded-md transition-colors" title="Editar Propuesta">
           <Edit3 className="h-4 w-4" />
         </button>
@@ -172,13 +167,12 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
         </button>
       </div>
 
-      <h4 className="font-semibold text-white text-lg pr-16">{activity.title}</h4>
+      <h4 className="font-semibold text-white text-lg pr-16">{activity.title} {activity.status === 'PENDIENTE' ? '(Pendiente)' : ''}</h4>
       
       {activity.start_time && (
-        <p className="text-xs text-yellow-400 font-medium mt-1 mb-2">
-          {/* Mostramos la hora forzando UTC-5 */}
-          {new Date(activity.start_time).toLocaleString('es-CO', { timeZone: 'America/Bogota', weekday: 'long', hour: '2-digit', minute: '2-digit' })}
-          {activity.duration_minutes ? ` (hasta ${defaultEndTime})` : ''}
+        <p className={`text-xs font-medium mt-1 mb-2 flex items-center gap-1 ${activity.status === 'PENDIENTE' ? 'text-yellow-400' : 'text-purple-400'}`}>
+          <Clock className="h-3 w-3" />
+          {new Date(activity.start_time).toLocaleString('es-CO', { timeZone: 'America/Bogota', weekday: 'long' })} • {defaultTime} {activity.duration_minutes ? ` - ${defaultEndTime}` : ''}
         </p>
       )}
 
@@ -195,53 +189,44 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
-        <div className="flex items-center gap-1.5 text-slate-300 bg-slate-950/50 p-2 rounded-md border border-slate-800">
-          <MapPin className="h-4 w-4 text-slate-500 shrink-0" />
-          <span className="truncate" title={activity.place_id}>{activity.place_id.split(',')[0]}</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-slate-300 bg-slate-950/50 p-2 rounded-md border border-slate-800">
-          <DollarSign className="h-4 w-4 text-emerald-500 shrink-0" />
-          <span>{activity.price > 0 ? `${activity.price} USD` : 'Gratis'}</span>
-        </div>
-      </div>
+      {locations.length > 0 && activity.latitude && (
+        <div className="mb-3 bg-slate-950/50 p-2 rounded-lg border border-slate-800">
+          <label className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1.5 block">Calcular ruta desde:</label>
+          <select value={origin} onChange={handleOriginChange} className="w-full bg-slate-900 border border-slate-700 rounded-md text-xs text-slate-300 px-2 py-1.5 focus:outline-none focus:border-blue-500 mb-2">
+            {locations.filter((loc: any) => loc.id !== activity.id).map((loc: any) => (
+              <option key={loc.id} value={`${loc.lat},${loc.lng}`}>{loc.name}</option>
+            ))}
+          </select>
 
-      {routing && (
-        <div className="flex gap-3 mb-4 text-xs text-slate-400 bg-slate-950/30 p-2 rounded-md border border-slate-800/50">
-           <span className="flex items-center gap-1" title="Tiempo estimado en Uber/Auto">
-             <Car className="h-3.5 w-3.5 text-blue-400"/> {routing.car} min
-           </span>
-           <span className="flex items-center gap-1" title="Tiempo estimado caminando">
-             <Footprints className="h-3.5 w-3.5 text-emerald-400"/> {routing.walk} min
-           </span>
+          {isLoadingRoute ? (
+            <div className="flex items-center gap-2 text-xs text-slate-400"><Loader2 className="h-3.5 w-3.5 animate-spin"/> Calculando nueva ruta...</div>
+          ) : dynamicRouting ? (
+            <div className="flex gap-4 text-xs text-slate-300 mt-2">
+              <span className="flex items-center gap-1" title="Tiempo estimado en Uber/Auto"><Car className="h-3.5 w-3.5 text-blue-400"/> {dynamicRouting.car} min</span>
+              <span className="flex items-center gap-1" title="Tiempo estimado caminando"><Footprints className="h-3.5 w-3.5 text-emerald-400"/> {dynamicRouting.walk} min</span>
+            </div>
+          ) : null}
         </div>
       )}
 
-      <div className="pt-3 border-t border-slate-800">
-        {isCreator && !myVote ? (
-          <div className="flex items-center justify-center gap-2 text-sm text-yellow-400 bg-yellow-900/10 py-2 rounded-md">
-            <Clock className="h-4 w-4" />
-            <span>Esperando confirmación...</span>
-          </div>
-        ) : (
-          <div className="flex gap-3">
-            <button
-              onClick={() => handleVote('REJECTED')}
-              disabled={isVoting}
-              className="flex-1 flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-900/50 text-slate-300 hover:text-red-400 py-2 rounded-md transition-colors text-sm font-medium border border-slate-700 disabled:opacity-50"
-            >
-              <XCircle className="h-4 w-4" /> Rechazar
-            </button>
-            <button
-              onClick={() => handleVote('APPROVED')}
-              disabled={isVoting}
-              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-md transition-colors text-sm font-medium disabled:opacity-50"
-            >
-              <CheckCircle className="h-4 w-4" /> Aprobar
-            </button>
-          </div>
-        )}
-      </div>
+      {activity.status === 'PENDIENTE' && (
+        <div className="pt-3 border-t border-slate-800">
+          {isCreator && !myVote ? (
+            <div className="flex items-center justify-center gap-2 text-sm text-yellow-400 bg-yellow-900/10 py-2 rounded-md">
+              <Clock className="h-4 w-4" /><span>Esperando confirmación...</span>
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <button onClick={() => handleVote('REJECTED')} disabled={isVoting} className="flex-1 flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-900/50 text-slate-300 hover:text-red-400 py-2 rounded-md transition-colors text-sm font-medium border border-slate-700 disabled:opacity-50">
+                <XCircle className="h-4 w-4" /> Rechazar
+              </button>
+              <button onClick={() => handleVote('APPROVED')} disabled={isVoting} className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-md transition-colors text-sm font-medium disabled:opacity-50">
+                <CheckCircle className="h-4 w-4" /> Aprobar
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
