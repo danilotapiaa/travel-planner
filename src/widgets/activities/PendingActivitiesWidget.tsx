@@ -9,7 +9,6 @@ export async function PendingActivitiesWidget() {
 
   if (!user) return null
 
-  // Obtener actividades pendientes
   const { data: pendingActivities } = await supabase
     .from('activities')
     .select(`*, activity_approvals (user_id, status)`)
@@ -18,10 +17,8 @@ export async function PendingActivitiesWidget() {
 
   if (!pendingActivities || pendingActivities.length === 0) return null
 
-  // Obtener TODAS las actividades aprobadas para el listado de ubicaciones
   const { data: approvedActivities } = await supabase.from('activities').select('id, title, latitude, longitude').eq('status', 'APROBADA')
 
-  // Construir las ubicaciones disponibles para calcular rutas
   const availableOrigins = [
     { id: 'airbnb', name: 'Airbnb (Campamento Base)', lat: 4.6460, lng: -74.0780 },
     { id: 'concierto', name: 'Concierto Rosalía (Movistar Arena)', lat: 4.6485, lng: -74.0776 },
@@ -32,7 +29,7 @@ export async function PendingActivitiesWidget() {
     pendingActivities.map(async (activity: any) => {
       let routing = null
       if (activity.latitude && activity.longitude) {
-        routing = await getTravelEstimates(activity.latitude, activity.longitude) // Por defecto calcula desde el Airbnb
+        routing = await getTravelEstimates(activity.latitude, activity.longitude)
       }
       return { ...activity, routing }
     })
@@ -40,21 +37,22 @@ export async function PendingActivitiesWidget() {
 
   return (
     <div className="mt-8">
-      <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2 mb-4">
+      <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2 mb-4 px-1">
         <ListTodo className="h-5 w-5 text-yellow-500" /> Propuestas por Aprobar
         <span className="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-0.5 rounded-full font-bold">
           {activitiesWithRouting.length}
         </span>
       </h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* CORRECCIÓN: Volvemos a grid de máximo 2 columnas anchas y con items-start para evitar estiramientos */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
         {activitiesWithRouting.map((activity: any) => (
           <ActivityVoteCard 
             key={activity.id} 
             activity={activity} 
             currentUserId={user.id} 
             routing={activity.routing}
-            locations={availableOrigins} // NUEVO: Pasamos las ubicaciones
+            locations={availableOrigins} 
           />
         ))}
       </div>

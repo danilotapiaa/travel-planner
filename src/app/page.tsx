@@ -5,10 +5,9 @@ import { TripMap } from '@/widgets/map/TripMap'
 import { CreateActivityForm } from '@/features/activities/ui/CreateActivityForm'
 import { PendingActivitiesWidget } from '@/widgets/activities/PendingActivitiesWidget'
 import { BudgetWidget } from '@/widgets/budget/BudgetWidget'
-import { createClient } from '@/shared/api/supabase/server' // <-- Importación añadida
+import { createClient } from '@/shared/api/supabase/server'
 
-export default async function Home() { // <-- Ahora es async para poder leer la base de datos
-  // NUEVO: Obtener actividades de la base de datos para el mapa
+export default async function Home() {
   const supabase = await createClient()
   const { data: dbActivities } = await supabase
     .from('activities')
@@ -23,16 +22,15 @@ export default async function Home() { // <-- Ahora es async para poder leer la 
     isPending: act.status === 'PENDIENTE'
   }))
 
-  // Cálculo de cuenta regresiva
   const tripDate = new Date('2026-07-15T16:40:00-05:00')
   const today = new Date()
   const daysLeft = differenceInDays(tripDate, today)
 
   return (
-    <div className="space-y-6 sm:space-y-8 flex flex-col pb-10 px-4 sm:px-6 lg:px-0">
+    <div className="flex flex-col pb-12 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full space-y-8">
       
       {/* Header del Dashboard */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-4 sm:px-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-4">
         <div className="w-full md:w-auto">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Resumen del Viaje</h1>
           <p className="text-sm sm:text-base text-slate-400 mt-1">Tu itinerario y próximos eventos están bajo control.</p>
@@ -48,92 +46,113 @@ export default async function Home() { // <-- Ahora es async para poder leer la 
         </div>
       </div>
 
-      <PendingActivitiesWidget />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* CONTENEDOR PRINCIPAL A DOS COLUMNAS */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
         
-        {/* Columna Principal (Vuelos y Alojamiento) */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* ========================================== */}
+        {/* COLUMNA IZQUIERDA (Flujo del viaje y Mapa) */}
+        {/* ========================================== */}
+        <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-8">
           
-          <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
-            <PlaneTakeoff className="h-5 w-5 text-slate-400" /> Vuelos Confirmados
-          </h2>
-          
-          {/* Tarjeta de Vuelo Ida */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm relative overflow-hidden group hover:border-slate-700 transition-colors">
-            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-400 ring-1 ring-inset ring-blue-500/20 mb-2">
-                  Ida • 15 Jul 2026
-                </span>
-                <h3 className="font-medium text-lg text-white">Quito (UIO) a Bogotá (BOG)</h3>
-                <p className="text-sm text-slate-400 mt-1">Avianca • AV1664 / AV8394 • Escala en Guayaquil</p>
-              </div>
-              <Ticket className="h-6 w-6 text-slate-600" />
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 mt-6 p-4 bg-slate-950/50 rounded-xl border border-slate-800/50">
-              <div className="flex flex-col">
-                <span className="text-xs text-slate-500 uppercase tracking-wider font-medium">Salida</span>
-                <span className="text-xl font-bold text-white mt-1">16:40</span>
-                <span className="text-sm text-slate-400">UIO - Mariscal Sucre</span>
-              </div>
-              
-              <div className="hidden sm:flex flex-1 items-center justify-center relative">
-                <div className="w-full h-[1px] bg-slate-700 absolute"></div>
-                <Plane className="h-4 w-4 text-slate-500 bg-slate-950/50 z-10 px-1" />
-              </div>
-              
-              <div className="flex flex-col">
-                <span className="text-xs text-slate-500 uppercase tracking-wider font-medium">Llegada</span>
-                <span className="text-xl font-bold text-white mt-1">20:45</span>
-                <span className="text-sm text-slate-400">BOG - Terminal 1</span>
-              </div>
-            </div>
-            
-            <div className="mt-4 flex items-start gap-2 bg-yellow-900/20 border border-yellow-800/30 p-3 rounded-lg">
-              <Clock className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-yellow-200/80">
-                <strong>Recordatorio:</strong> Debes salir hacia el aeropuerto a las 13:40 (3 horas de anticipación).
-              </p>
-            </div>
+          <div className="-mt-8">
+            <PendingActivitiesWidget />
           </div>
 
-          {/* Tarjeta de Alojamiento */}
-          <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2 mt-8 mb-4">
-            <MapPin className="h-5 w-5 text-slate-400" /> Alojamiento
-          </h2>
-          
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm hover:border-slate-700 transition-colors">
-            <div className="flex gap-4">
-              <div className="h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
-                <MapPin className="h-6 w-6 text-emerald-500" />
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
+              <PlaneTakeoff className="h-5 w-5 text-slate-400" /> Vuelos y Alojamiento
+            </h2>
+            
+            {/* Tarjeta de Vuelo Ida */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm relative overflow-hidden group hover:border-slate-700 transition-colors">
+              <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-400 ring-1 ring-inset ring-blue-500/20 mb-2">
+                    Ida • 15 Jul 2026
+                  </span>
+                  <h3 className="font-medium text-lg text-white">Quito (UIO) a Bogotá (BOG)</h3>
+                  <p className="text-sm text-slate-400 mt-1">Avianca • AV1664 / AV8394 • Escala en Guayaquil</p>
+                </div>
+                <Ticket className="h-6 w-6 text-slate-600" />
               </div>
-              <div>
-                <h3 className="font-medium text-lg text-white">Airbnb Bogotá</h3>
-                <p className="text-slate-400 mt-1">2717 Diagonal 61D, Bogotá 111221</p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 mt-6 p-4 bg-slate-950/50 rounded-xl border border-slate-800/50">
+                <div className="flex flex-col">
+                  <span className="text-xs text-slate-500 uppercase tracking-wider font-medium">Salida</span>
+                  <span className="text-xl font-bold text-white mt-1">16:40</span>
+                  <span className="text-sm text-slate-400">UIO - Mariscal Sucre</span>
+                </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-sm">
-                  <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                    <span className="text-slate-500 block mb-1">Check-in</span>
-                    <span className="text-white font-medium">Mié 15 Jul • ~22:00</span>
-                  </div>
-                  <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                    <span className="text-slate-500 block mb-1">Check-out</span>
-                    <span className="text-white font-medium">Dom 19 Jul • 12:00</span>
+                <div className="hidden sm:flex flex-1 items-center justify-center relative">
+                  <div className="w-full h-[1px] bg-slate-700 absolute"></div>
+                  <Plane className="h-4 w-4 text-slate-500 bg-slate-950/50 z-10 px-1" />
+                </div>
+                
+                <div className="flex flex-col">
+                  <span className="text-xs text-slate-500 uppercase tracking-wider font-medium">Llegada</span>
+                  <span className="text-xl font-bold text-white mt-1">20:45</span>
+                  <span className="text-sm text-slate-400">BOG - Terminal 1</span>
+                </div>
+              </div>
+              
+              <div className="mt-4 flex items-start gap-2 bg-yellow-900/20 border border-yellow-800/30 p-3 rounded-lg">
+                <Clock className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+                <p className="text-sm text-yellow-200/80">
+                  <strong>Recordatorio:</strong> Debes salir hacia el aeropuerto a las 13:40 (3 horas de anticipación).
+                </p>
+              </div>
+            </div>
+
+            {/* Tarjeta de Alojamiento */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm hover:border-slate-700 transition-colors">
+              <div className="flex gap-4">
+                <div className="h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  <MapPin className="h-6 w-6 text-emerald-500" />
+                </div>
+                <div className="w-full">
+                  <h3 className="font-medium text-lg text-white">Airbnb Bogotá</h3>
+                  <p className="text-slate-400 mt-1">2717 Diagonal 61D, Bogotá 111221</p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-sm">
+                    <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                      <span className="text-slate-500 block mb-1">Check-in</span>
+                      <span className="text-white font-medium">Mié 15 Jul • ~22:00</span>
+                    </div>
+                    <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                      <span className="text-slate-500 block mb-1">Check-out</span>
+                      <span className="text-white font-medium">Dom 19 Jul • 12:00</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Sección del Mapa */}
+          <div className="space-y-4 pt-2">
+            <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-slate-400" /> Mapa del Viaje
+            </h2>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-sm">
+              <TripMap activities={mapActivities} />
+            </div>
+          </div>
+
         </div>
 
-        {/* Columna Lateral (Eventos y Regreso) */}
-        <div className="space-y-6">
+        {/* ========================================== */}
+        {/* COLUMNA DERECHA (Proponer, Presupuesto y Eventos Fijos) */}
+        {/* ========================================== */}
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-6">
           
-          {/* Evento Principal */}
+          {/* 1. Formulario de creación primero */}
+          <CreateActivityForm />
+
+          {/* 2. Presupuesto */}
+          <BudgetWidget />
+
+          {/* 3. Evento Principal */}
           <div className="bg-gradient-to-br from-pink-900/40 to-purple-900/40 border border-pink-800/50 rounded-2xl p-6 shadow-lg shadow-pink-900/10">
             <div className="h-10 w-10 rounded-xl bg-pink-500/20 flex items-center justify-center mb-4">
               <Music className="h-5 w-5 text-pink-400" />
@@ -154,7 +173,7 @@ export default async function Home() { // <-- Ahora es async para poder leer la 
             </div>
           </div>
 
-          {/* Resumen Vuelo Regreso */}
+          {/* 4. Resumen Vuelo Regreso */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition-colors">
             <h3 className="font-medium text-white flex items-center gap-2 mb-4">
               <PlaneLanding className="h-4 w-4 text-slate-400" /> Vuelo de Regreso
@@ -175,26 +194,8 @@ export default async function Home() { // <-- Ahora es async para poder leer la 
             </div>
           </div>
 
-          <CreateActivityForm />
-
         </div>
       </div>
-
-      <div className="mt-8">
-        <BudgetWidget />
-      </div>
-
-      {/* Sección del Mapa (Fase 3) */}
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2 mb-4">
-          <MapPin className="h-5 w-5 text-slate-400" /> Mapa del Viaje
-        </h2>
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-sm">
-          {/* <-- AQUÍ SE PASA LA DATA AL MAPA --> */}
-          <TripMap activities={mapActivities} />
-        </div>
-      </div>
-
     </div>
   )
 }
