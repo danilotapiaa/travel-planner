@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MapPin, DollarSign, CheckCircle, XCircle, Clock, Trash2, Edit3, Car, Footprints, Loader2, X, Globe, ExternalLink } from 'lucide-react'
+import { MapPin, DollarSign, CheckCircle, XCircle, Clock, Trash2, Edit3, Car, Footprints, Loader2, X, Globe } from 'lucide-react'
 import { voteActivity, deleteActivity, editActivity } from '../actions'
 
 type ActivityProps = {
@@ -23,10 +23,29 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
   let defaultTime = ""
   let defaultEndTime = ""
 
-  if (activity.start_time && activity.start_time.includes('T')) {
-    const parts = activity.start_time.split('T')
-    defaultDate = parts[0]
-    defaultTime = parts[1].substring(0, 5)
+  if (activity.start_time) {
+    const dateObj = new Date(activity.start_time)
+    
+    // NUEVO: Forzamos la extracción de datos bajo la zona horaria UTC-5 para evitar desfases
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Bogota',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+    
+    const parts = fmt.formatToParts(dateObj)
+    const getPart = (type: string) => parts.find(p => p.type === type)?.value
+    
+    defaultDate = `${getPart('year')}-${getPart('month')}-${getPart('day')}`
+    
+    let hour = getPart('hour') || '00'
+    if (hour === '24') hour = '00'
+    
+    defaultTime = `${hour}:${getPart('minute')}`
 
     if (activity.duration_minutes) {
       const [hh, mm] = defaultTime.split(':').map(Number)
@@ -74,7 +93,6 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
     setIsEditing(false)
   }
 
-  // Generador de Link de Google Maps
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${activity.latitude},${activity.longitude}`
 
   if (isEditing) {
@@ -119,10 +137,10 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
 
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Precio Estimado (USD)</label>
-            <input name="price" type="number" step="0.01" defaultValue={activity.price} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            {/* type text para evitar errores del navegador en dispositivos móviles al usar coma */}
+            <input name="price" type="text" inputMode="decimal" defaultValue={activity.price} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
           </div>
 
-          {/* NUEVO: Campo de edición para el sitio web */}
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Enlace Web (Opcional)</label>
             <input name="website_url" type="url" defaultValue={activity.website_url || ''} placeholder="https://..." className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
@@ -158,14 +176,14 @@ export function ActivityVoteCard({ activity, currentUserId, routing }: ActivityP
       
       {activity.start_time && (
         <p className="text-xs text-yellow-400 font-medium mt-1 mb-2">
-          {new Date(activity.start_time).toLocaleString('es-CO', { weekday: 'long', hour: '2-digit', minute: '2-digit' })}
+          {/* Mostramos la hora forzando UTC-5 */}
+          {new Date(activity.start_time).toLocaleString('es-CO', { timeZone: 'America/Bogota', weekday: 'long', hour: '2-digit', minute: '2-digit' })}
           {activity.duration_minutes ? ` (hasta ${defaultEndTime})` : ''}
         </p>
       )}
 
       <p className="text-sm text-slate-400 mb-4">{activity.description}</p>
 
-      {/* NUEVO: Botones para abrir en Google Maps y Sitio Web */}
       <div className="flex flex-wrap gap-2 mb-4 text-xs">
         <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 bg-blue-950/40 px-2.5 py-1.5 rounded-md border border-blue-900/50 transition-colors">
           <MapPin className="h-3.5 w-3.5" /> Abrir en Maps

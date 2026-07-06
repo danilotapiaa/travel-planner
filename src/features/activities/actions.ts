@@ -8,17 +8,21 @@ export async function proposeActivity(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Usuario no autenticado')
 
+  // NUEVO: Manejo robusto de decimales (convierte coma en punto)
+  const priceStr = formData.get('price') as string || '0'
+  const price = parseFloat(priceStr.replace(',', '.')) || 0
+
   const { error } = await supabase.from('activities').insert({
     title: formData.get('title') as string,
     description: formData.get('description') as string,
     category: formData.get('category') as string,
-    price: parseFloat(formData.get('price') as string) || 0,
+    price: price,
     start_time: formData.get('start_time') as string,
     duration_minutes: parseInt(formData.get('duration_minutes') as string) || null,
     latitude: parseFloat(formData.get('latitude') as string),
     longitude: parseFloat(formData.get('longitude') as string),
     place_id: formData.get('place_name') as string,
-    website_url: formData.get('website_url') as string || null, // NUEVO
+    website_url: formData.get('website_url') as string || null,
     created_by: user.id,
     status: 'PENDIENTE'
   })
@@ -39,13 +43,17 @@ export async function editActivity(activityId: string, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Usuario no autenticado')
 
+  // NUEVO: Manejo robusto de decimales (convierte coma en punto)
+  const priceStr = formData.get('price') as string || '0'
+  const price = parseFloat(priceStr.replace(',', '.')) || 0
+
   await supabase.from('activities').update({
     title: formData.get('title') as string,
     description: formData.get('description') as string,
-    price: parseFloat(formData.get('price') as string) || 0,
+    price: price,
     start_time: formData.get('start_time') as string,
     duration_minutes: parseInt(formData.get('duration_minutes') as string) || null,
-    website_url: formData.get('website_url') as string || null, // NUEVO
+    website_url: formData.get('website_url') as string || null,
     status: 'PENDIENTE',
     created_by: user.id 
   }).eq('id', activityId)
