@@ -12,17 +12,21 @@ export async function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo y Enlaces */}
-          <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2 text-white font-bold text-lg hover:text-blue-400 transition-colors">
-              <Map className="h-6 w-6 text-blue-500" />
-              <span>Bogotá '26</span>
+          <div className="flex items-center gap-4 md:gap-8 min-w-0">
+            <Link href="/" className="flex items-center gap-1 sm:gap-2 text-white font-bold text-sm sm:text-lg hover:text-blue-400 transition-colors shrink-0">
+              <Map className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
+              <span className="hidden sm:inline">Bogotá '26</span>
             </Link>
-            <div className="hidden md:flex gap-6">
-              <Link href="/" className="flex items-center gap-1 text-sm font-medium text-slate-300 hover:text-blue-400 py-5 transition-colors border-b-2 border-transparent hover:border-blue-500">
-                <CalendarDays className="h-4 w-4" /> Dashboard
+            <div className="flex gap-2 md:gap-6 flex-wrap">
+              <Link href="/" className="flex items-center gap-1 text-xs sm:text-sm font-medium text-slate-300 hover:text-blue-400 py-4 sm:py-5 transition-colors border-b-2 border-transparent hover:border-blue-500 whitespace-nowrap">
+                <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Dashboard</span>
+                <span className="inline sm:hidden">Inicio</span>
               </Link>
-              <Link href="/itinerario" className="flex items-center gap-1 text-sm font-medium text-slate-300 hover:text-blue-400 py-5 transition-colors border-b-2 border-transparent hover:border-blue-500">
-                <Plane className="h-4 w-4" /> Itinerario
+              <Link href="/itinerario" className="flex items-center gap-1 text-xs sm:text-sm font-medium text-slate-300 hover:text-blue-400 py-4 sm:py-5 transition-colors border-b-2 border-transparent hover:border-blue-500 whitespace-nowrap">
+                <Plane className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Itinerario</span>
+                <span className="inline sm:hidden">Ruta</span>
               </Link>
             </div>
           </div>
