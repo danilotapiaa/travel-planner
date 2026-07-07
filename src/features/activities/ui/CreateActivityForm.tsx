@@ -77,7 +77,6 @@ export function CreateActivityForm() {
       <div className="mb-6 space-y-2">
         <label className="text-sm font-medium text-slate-300">Buscar Ubicación</label>
         <div className="flex gap-2">
-          {/* NUEVO PLACEHOLDER DE INSTRUCCIÓN */}
           <input 
             type="text" 
             value={searchQuery} 
@@ -152,9 +151,16 @@ export function CreateActivityForm() {
                 <option value="Otro">Otro</option>
               </select>
             </div>
+            {/* NUEVO: Campo de precio con selector de moneda integrado */}
             <div>
-              <label className="text-sm font-medium text-slate-300">Precio Estimado (USD)</label>
-              <input name="price" type="number" step="0.01" min="0" placeholder="0.00" className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <label className="text-sm font-medium text-slate-300">Precio Estimado</label>
+              <div className="flex gap-2 mt-1">
+                <input name="price" type="text" inputMode="decimal" placeholder="0" className="flex-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <select name="currency" className="w-20 sm:w-24 rounded-md border border-slate-700 bg-slate-950 px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="USD">USD</option>
+                  <option value="COP">COP</option>
+                </select>
+              </div>
             </div>
           </div>
 

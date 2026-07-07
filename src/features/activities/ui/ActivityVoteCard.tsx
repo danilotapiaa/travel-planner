@@ -115,7 +115,9 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
     if (!searchQuery) return
     setIsSearchingOrigin(true)
     try {
-      const res = await fetch(`/api/nominatim/search?q=${encodeURIComponent(searchQuery)}`, { headers: { 'Accept-Language': 'es' } })
+      const res = await fetch(`/api/nominatim/search?q=${encodeURIComponent(searchQuery)}`, { 
+        headers: { 'Accept-Language': 'es' } 
+      })
       const data = await res.json()
       setSearchResults(data)
     } catch (error) {
@@ -168,10 +170,20 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
               <input name="end_time" type="time" defaultValue={defaultEndTime} required className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
             </div>
           </div>
+          
+          {/* NUEVO: Campo de precio con selector de moneda */}
           <div>
-            <label className="text-slate-400 text-xs mb-1 block">Precio Estimado (USD)</label>
-            <input name="price" type="text" inputMode="decimal" defaultValue={activity.price} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <label className="text-slate-400 text-xs mb-1 block">Precio Estimado</label>
+            <div className="flex gap-2">
+              <input name="price" type="text" inputMode="decimal" defaultValue={activity.price} className="flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <select name="currency" defaultValue="USD" className="w-20 sm:w-24 rounded-md border border-slate-700 bg-slate-950 px-2 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+                <option value="USD">USD</option>
+                <option value="COP">COP</option>
+              </select>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-1">Nota: Si ingresas COP, se guardará convertido a USD.</p>
           </div>
+
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Enlace Web (Opcional)</label>
             <input name="website_url" type="url" defaultValue={activity.website_url || ''} placeholder="https://..." className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
@@ -249,7 +261,6 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
               {!customOriginName ? (
                 <>
                   <div className="flex gap-2">
-                    {/* NUEVO PLACEHOLDER DE INSTRUCCIÓN */}
                     <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Dirección o Coordenadas (Ej: 4.65, -74.05)" className="flex-1 rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500" />
                     <button onClick={handleSearchOrigin} disabled={isSearchingOrigin} className="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-md transition flex items-center justify-center disabled:opacity-50">
                       {isSearchingOrigin ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
