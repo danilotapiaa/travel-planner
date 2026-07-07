@@ -24,7 +24,6 @@ function parseAndConvertPrice(priceStr: string, currency: string, copRate: numbe
     price = price / copRate
   }
   
-  // SOLUCIÓN: Redondeo de precisión absoluta para evitar que 7 se vuelva 6.99
   return Math.round((price + Number.EPSILON) * 100) / 100
 }
 
@@ -112,7 +111,8 @@ export async function voteActivity(activityId: string, status: 'APPROVED' | 'REJ
       .eq('activity_id', activityId)
       .eq('status', 'APPROVED')
 
-    if (approvals && approvals.length >= 2) {
+    // CORRECCIÓN: Ahora exige 1 solo voto externo para marcarla como APROBADA
+    if (approvals && approvals.length >= 1) {
       await supabase.from('activities').update({ status: 'APROBADA' }).eq('id', activityId)
     }
   }
