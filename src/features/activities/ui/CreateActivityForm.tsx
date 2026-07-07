@@ -23,7 +23,7 @@ export function CreateActivityForm() {
     if (!searchQuery) return
     setIsSearching(true)
     try {
-      const res = await fetch(`/api/nominatim/search?q=${encodeURIComponent(searchQuery + ' Bogotá')}`, {
+      const res = await fetch(`/api/nominatim/search?q=${encodeURIComponent(searchQuery)}`, {
         headers: { 'Accept-Language': 'es' }
       })
       const data = await res.json()
@@ -77,14 +77,21 @@ export function CreateActivityForm() {
       <div className="mb-6 space-y-2">
         <label className="text-sm font-medium text-slate-300">Buscar Ubicación</label>
         <div className="flex gap-2">
-          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Ej. Museo del Oro..." className="flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          {/* NUEVO PLACEHOLDER DE INSTRUCCIÓN */}
+          <input 
+            type="text" 
+            value={searchQuery} 
+            onChange={(e) => setSearchQuery(e.target.value)} 
+            placeholder="Dirección, lugar, o Coordenadas Exactas (Ej: 4.65, -74.05)" 
+            className="flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+          />
           <button onClick={handleSearch} disabled={isSearching} className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-md transition flex items-center justify-center disabled:opacity-50">
             {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
           </button>
         </div>
 
         {results.length > 0 && !selectedPlace && (
-          <div className="mt-2 border border-slate-700 rounded-md bg-slate-950 overflow-hidden">
+          <div className="mt-2 border border-slate-700 rounded-md bg-slate-950 overflow-hidden max-h-60 overflow-y-auto">
             {results.map((place) => (
               <div key={place.place_id} onClick={() => setSelectedPlace(place)} className="p-3 hover:bg-slate-800 cursor-pointer border-b border-slate-800 last:border-0 flex items-start gap-3 transition">
                 <MapPin className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
@@ -151,7 +158,6 @@ export function CreateActivityForm() {
             </div>
           </div>
 
-          {/* NUEVO: Campo de Web Opcional */}
           <div>
             <label className="text-sm font-medium text-slate-300">Enlace Web (Opcional)</label>
             <input name="website_url" type="url" placeholder="https://..." className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />

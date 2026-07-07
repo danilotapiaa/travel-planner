@@ -18,12 +18,10 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   
-  // --- Estados para el cálculo de rutas dinámico ---
-  const [origin, setOrigin] = useState("4.6460,-74.0780") // Airbnb por defecto
+  const [origin, setOrigin] = useState("4.6460,-74.0780") 
   const [dynamicRouting, setDynamicRouting] = useState(routing)
   const [isLoadingRoute, setIsLoadingRoute] = useState(false)
   
-  // --- Estados para el buscador personalizado de origen ---
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [isSearchingOrigin, setIsSearchingOrigin] = useState(false)
@@ -32,7 +30,6 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
   const isCreator = activity.created_by === currentUserId
   const myVote = activity.activity_approvals?.find((a: any) => a.user_id === currentUserId)
 
-  // Cálculo de horas (Forzando UTC-5 para evitar desfases)
   let defaultDate = ""
   let defaultTime = ""
   let defaultEndTime = ""
@@ -60,7 +57,6 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
     }
   }
 
-  // --- Manejadores de acciones ---
   const handleVote = async (status: 'APPROVED' | 'REJECTED') => {
     setIsVoting(true)
     await voteActivity(activity.id, status)
@@ -96,7 +92,6 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
     setIsEditing(false)
   }
 
-  // --- Funciones para el cálculo de Rutas y Búsqueda ---
   const handleOriginChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value
     setOrigin(val)
@@ -120,7 +115,7 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
     if (!searchQuery) return
     setIsSearchingOrigin(true)
     try {
-      const res = await fetch(`/api/nominatim/search?q=${encodeURIComponent(searchQuery + ' Bogotá')}`, { headers: { 'Accept-Language': 'es' } })
+      const res = await fetch(`/api/nominatim/search?q=${encodeURIComponent(searchQuery)}`, { headers: { 'Accept-Language': 'es' } })
       const data = await res.json()
       setSearchResults(data)
     } catch (error) {
@@ -141,7 +136,6 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
 
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${activity.latitude},${activity.longitude}`
 
-  // --- VISTA DE EDICIÓN ---
   if (isEditing) {
     return (
       <div className="bg-slate-900 border border-blue-800 rounded-xl p-4 shadow-lg shadow-blue-900/10 relative">
@@ -194,9 +188,8 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
     )
   }
 
-  // --- VISTA PRINCIPAL DE LA TARJETA ---
   return (
-    <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 shadow-md relative overflow-hidden group hover:border-slate-600 transition-colors">
+    <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 shadow-md relative overflow-hidden group hover:border-slate-600 transition-colors w-full">
       <div className={`absolute top-0 left-0 w-1 h-full ${activity.status === 'PENDIENTE' ? 'bg-yellow-500' : 'bg-purple-500'}`}></div>
       
       <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 pl-2 pb-2 rounded-bl-lg z-10">
@@ -241,7 +234,6 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
         </div>
       </div>
 
-      {/* --- MÓDULO DE RUTAS CON BUSCADOR --- */}
       {locations.length > 0 && activity.latitude && (
         <div className="mb-3 bg-slate-950/50 p-3 rounded-lg border border-slate-800">
           <label className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1.5 block">Calcular ruta desde:</label>
@@ -252,13 +244,13 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
             <option value="custom">🔍 Otra ubicación (Buscar)...</option>
           </select>
 
-          {/* Buscador personalizado (Se muestra solo si se selecciona "Otra ubicación") */}
           {origin === 'custom' && (
             <div className="mb-3 space-y-2">
               {!customOriginName ? (
                 <>
                   <div className="flex gap-2">
-                    <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Ej. Museo Botero..." className="flex-1 rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500" />
+                    {/* NUEVO PLACEHOLDER DE INSTRUCCIÓN */}
+                    <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Dirección o Coordenadas (Ej: 4.65, -74.05)" className="flex-1 rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500" />
                     <button onClick={handleSearchOrigin} disabled={isSearchingOrigin} className="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-md transition flex items-center justify-center disabled:opacity-50">
                       {isSearchingOrigin ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
                     </button>
@@ -277,15 +269,12 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
               ) : (
                 <div className="flex items-center justify-between bg-blue-900/20 border border-blue-800/50 p-2 rounded-md">
                   <span className="text-[11px] text-blue-300 line-clamp-1 flex-1 pr-2">{customOriginName}</span>
-                  <button onClick={() => { setCustomOriginName(''); setSearchQuery(''); setDynamicRouting(null) }} className="text-slate-400 hover:text-white" title="Limpiar búsqueda">
-                    <X className="h-3.5 w-3.5"/>
-                  </button>
+                  <button onClick={() => { setCustomOriginName(''); setSearchQuery(''); setDynamicRouting(null) }} className="text-slate-400 hover:text-white"><X className="h-3.5 w-3.5"/></button>
                 </div>
               )}
             </div>
           )}
 
-          {/* Resultados de la ruta calculada */}
           {isLoadingRoute ? (
             <div className="flex items-center gap-2 text-xs text-slate-400"><Loader2 className="h-3.5 w-3.5 animate-spin"/> Calculando nueva ruta...</div>
           ) : dynamicRouting ? (
