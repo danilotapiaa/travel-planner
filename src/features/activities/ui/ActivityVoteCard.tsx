@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MapPin, DollarSign, CheckCircle, XCircle, Clock, Trash2, Edit3, Car, Footprints, Loader2, X, Globe, Search } from 'lucide-react'
 import { voteActivity, deleteActivity, editActivity } from '../actions'
 import { getTravelEstimates } from '@/features/routing/osrm'
@@ -29,6 +29,37 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
 
   const isCreator = activity.created_by === currentUserId
   const myVote = activity.activity_approvals?.find((a: any) => a.user_id === currentUserId)
+
+  // --- NUEVO: Hook para recuperar la ubicación guardada al recargar la página ---
+  useEffect(() => {
+    // Buscar si hay un origen guardado para esta actividad específica en el navegador
+    const savedOrigin = localStorage.getItem(`activity-origin-${activity.id}`)
+    
+    if (savedOrigin && savedOrigin !== "4.6460,-74.0780" && savedOrigin !== "custom") {
+      setOrigin(savedOrigin)
+      
+      // Recalcular la ruta automáticamente con la ubicación guardada
+      const fetchSavedRoute = async () => {
+        setIsLoadingRoute(true)
+        try {
+          const [origLat, origLng] = savedOrigin.split(',')
+          const res = await getTravelEstimates(
+            activity.latitude, 
+            activity.longitude, 
+            parseFloat(origLat), 
+            parseFloat(origLng)
+          )
+          setDynamicRouting(res)
+        } catch (error) {
+          console.error('Error calculando ruta guardada:', error)
+        } finally {
+          setIsLoadingRoute(false)
+        }
+      }
+      fetchSavedRoute()
+    }
+  }, [activity.id, activity.latitude, activity.longitude])
+  // -----------------------------------------------------------------------------
 
   let defaultDate = ""
   let defaultTime = ""
@@ -100,8 +131,13 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
       setCustomOriginName('')
       setSearchQuery('')
       setDynamicRouting(null)
+      localStorage.removeItem(`activity-origin-${activity.id}`) // Eliminar guardado si es custom
       return
     }
+
+    // --- NUEVO: Guardar la elección en el localStorage ---
+    localStorage.setItem(`activity-origin-${activity.id}`, val)
+    // -----------------------------------------------------
 
     setIsLoadingRoute(true)
     const [origLat, origLng] = val.split(',')
@@ -136,7 +172,7 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
     setIsLoadingRoute(false)
   }
 
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${activity.latitude},${activity.longitude}`
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=$${activity.latitude},${activity.longitude}`
 
   if (isEditing) {
     return (
@@ -171,7 +207,6 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
             </div>
           </div>
           
-          {/* NUEVO: Campo de precio con selector de moneda */}
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Precio Estimado</label>
             <div className="flex gap-2">
