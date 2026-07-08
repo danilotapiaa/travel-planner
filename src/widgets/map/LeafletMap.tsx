@@ -58,7 +58,12 @@ export default function LeafletMap({ activities }: MapProps) {
   const allMarkers = [...fixedMarkers, ...dynamicMarkers]
 
   return (
-    <MapContainer center={[4.647, -74.078]} zoom={14} className="h-[400px] w-full rounded-2xl z-0" zoomControl={false}>
+    <MapContainer 
+  center={[4.650265, -74.07646]} 
+  zoom={16} // Aumenté el zoom ligeramente (de 14 a 16) para mayor detalle en la nueva ubicación
+  className="h-[400px] w-full rounded-2xl z-0" 
+  zoomControl={false}
+>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
