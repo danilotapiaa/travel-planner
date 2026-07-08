@@ -172,7 +172,7 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
     setIsLoadingRoute(false)
   }
 
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=$${activity.latitude},${activity.longitude}`
+  const googleMapsUrl = `https://www.google.com/maps?q=${activity.latitude},${activity.longitude}`
 
   if (isEditing) {
     return (
