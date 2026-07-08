@@ -43,8 +43,8 @@ const greenIcon = L.icon({
 
 export default function LeafletMap({ activities }: MapProps) {
   const fixedMarkers = [
-    { id: 'airbnb', lat: 4.6460, lng: -74.0780, title: 'Airbnb (Campamento Base)', icon: greenIcon },
-    { id: 'concierto', lat: 4.6485, lng: -74.0776, title: 'Concierto Rosalía', icon: pinkIcon }
+    { id: 'airbnb', lat: 4.6500320829906485, lng: -74.07527937114875, title: 'Airbnb ', icon: greenIcon },
+    { id: 'concierto', lat: 4.650499569614003, lng: -74.07764307961095, title: 'Concierto Rosalía', icon: pinkIcon }
   ]
 
   const dynamicMarkers = activities.map(act => ({
