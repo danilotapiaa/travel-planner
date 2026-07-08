@@ -111,11 +111,27 @@ export async function voteActivity(activityId: string, status: 'APPROVED' | 'REJ
       .eq('activity_id', activityId)
       .eq('status', 'APPROVED')
 
-    // CORRECCIÓN: Ahora exige 1 solo voto externo para marcarla como APROBADA
     if (approvals && approvals.length >= 1) {
       await supabase.from('activities').update({ status: 'APROBADA' }).eq('id', activityId)
     }
   }
   revalidatePath('/', 'layout')
   return { success: true }
+}
+
+export async function updateActivityOrigin(activityId: string, lat: number, lng: number, name: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Usuario no autenticado')
+
+  await supabase
+    .from('activities')
+    .update({
+      route_origin_lat: lat,
+      route_origin_lng: lng,
+      route_origin_name: name
+    })
+    .eq('id', activityId)
+
+  revalidatePath('/', 'layout')
 }

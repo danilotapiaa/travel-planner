@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { MapPin, DollarSign, CheckCircle, XCircle, Clock, Trash2, Edit3, Car, Footprints, Loader2, X, Globe, Search } from 'lucide-react'
-import { voteActivity, deleteActivity, editActivity } from '../actions'
+import { voteActivity, deleteActivity, editActivity, updateActivityOrigin } from '../actions'
 import { getTravelEstimates } from '@/features/routing/osrm'
+import { createClient } from '@/shared/api/supabase/client'
 
 type ActivityProps = {
   activity: any
@@ -13,6 +14,7 @@ type ActivityProps = {
 }
 
 export function ActivityVoteCard({ activity, currentUserId, routing, locations = [] }: ActivityProps) {
+  const [currentActivity, setCurrentActivity] = useState(activity)
   const [isVoting, setIsVoting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -27,46 +29,110 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
   const [isSearchingOrigin, setIsSearchingOrigin] = useState(false)
   const [customOriginName, setCustomOriginName] = useState('')
 
-  const isCreator = activity.created_by === currentUserId
-  const myVote = activity.activity_approvals?.find((a: any) => a.user_id === currentUserId)
+  const isCreator = currentActivity.created_by === currentUserId
+  const myVote = currentActivity.activity_approvals?.find((a: any) => a.user_id === currentUserId)
 
-  // --- NUEVO: Hook para recuperar la ubicación guardada al recargar la página ---
   useEffect(() => {
-    // Buscar si hay un origen guardado para esta actividad específica en el navegador
-    const savedOrigin = localStorage.getItem(`activity-origin-${activity.id}`)
+    setCurrentActivity(activity)
+  }, [activity])
+
+  // --- Suscripción a Canales en Tiempo Real con Supabase ---
+  useEffect(() => {
+    const supabaseClient = createClient()
     
-    if (savedOrigin && savedOrigin !== "4.6460,-74.0780" && savedOrigin !== "custom") {
-      setOrigin(savedOrigin)
+    const channel = supabaseClient
+      .channel(`activity_realtime_${activity.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'activities',
+          filter: `id=eq.${activity.id}`
+        },
+        (payload) => {
+          if (payload.new) {
+            setCurrentActivity((prev: any) => ({
+              ...prev,
+              ...payload.new,
+              activity_approvals: prev.activity_approvals // Evita que la relación de aprobaciones cargada por SSR se pise
+            }))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabaseClient.removeChannel(channel)
+    }
+  }, [activity.id])
+
+  // --- Reacción ante Cambios del Origen y Recálculo Automático de Tiempos OSRM ---
+  useEffect(() => {
+    const lat = currentActivity.route_origin_lat
+    const lng = currentActivity.route_origin_lng
+    const name = currentActivity.route_origin_name
+
+    if (lat && lng) {
+      const coordStr = `${parseFloat(lat)},${parseFloat(lng)}`
+      const isPredefined = locations.some(loc => `${parseFloat(loc.lat as any)},${parseFloat(loc.lng as any)}` === coordStr)
       
-      // Recalcular la ruta automáticamente con la ubicación guardada
-      const fetchSavedRoute = async () => {
+      if (isPredefined) {
+        setOrigin(coordStr)
+        setCustomOriginName('')
+      } else {
+        setOrigin('custom')
+        setCustomOriginName(name || 'Ubicación personalizada')
+      }
+
+      const fetchRoute = async () => {
         setIsLoadingRoute(true)
         try {
-          const [origLat, origLng] = savedOrigin.split(',')
           const res = await getTravelEstimates(
-            activity.latitude, 
-            activity.longitude, 
-            parseFloat(origLat), 
-            parseFloat(origLng)
+            currentActivity.latitude,
+            currentActivity.longitude,
+            parseFloat(lat),
+            parseFloat(lng)
           )
           setDynamicRouting(res)
         } catch (error) {
-          console.error('Error calculando ruta guardada:', error)
+          console.error('Error calculando ruta compartida:', error)
         } finally {
           setIsLoadingRoute(false)
         }
       }
-      fetchSavedRoute()
+      fetchRoute()
+    } else {
+      // Estado de fallback por defecto en el destino
+      setOrigin("4.6460,-74.0780")
+      setCustomOriginName('')
+      
+      const fetchDefaultRoute = async () => {
+        setIsLoadingRoute(true)
+        try {
+          const res = await getTravelEstimates(
+            currentActivity.latitude,
+            currentActivity.longitude,
+            4.6460,
+            -74.0780
+          )
+          setDynamicRouting(res)
+        } catch (error) {
+          console.error('Error calculando ruta base:', error)
+        } finally {
+          setIsLoadingRoute(false)
+        }
+      }
+      fetchDefaultRoute()
     }
-  }, [activity.id, activity.latitude, activity.longitude])
-  // -----------------------------------------------------------------------------
+  }, [currentActivity.route_origin_lat, currentActivity.route_origin_lng, currentActivity.route_origin_name, currentActivity.latitude, currentActivity.longitude, locations])
 
   let defaultDate = ""
   let defaultTime = ""
   let defaultEndTime = ""
 
-  if (activity.start_time) {
-    const dateObj = new Date(activity.start_time)
+  if (currentActivity.start_time) {
+    const dateObj = new Date(currentActivity.start_time)
     const fmt = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
     })
@@ -79,9 +145,9 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
     if (hour === '24') hour = '00'
     defaultTime = `${hour}:${getPart('minute')}`
 
-    if (activity.duration_minutes) {
+    if (currentActivity.duration_minutes) {
       const [hh, mm] = defaultTime.split(':').map(Number)
-      const totalMins = hh * 60 + mm + activity.duration_minutes
+      const totalMins = hh * 60 + mm + currentActivity.duration_minutes
       const endH = Math.floor(totalMins / 60) % 24
       const endM = totalMins % 60
       defaultEndTime = `${String(endH).padStart(2,'0')}:${String(endM).padStart(2,'0')}`
@@ -131,19 +197,15 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
       setCustomOriginName('')
       setSearchQuery('')
       setDynamicRouting(null)
-      localStorage.removeItem(`activity-origin-${activity.id}`) // Eliminar guardado si es custom
       return
     }
 
-    // --- NUEVO: Guardar la elección en el localStorage ---
-    localStorage.setItem(`activity-origin-${activity.id}`, val)
-    // -----------------------------------------------------
-
     setIsLoadingRoute(true)
     const [origLat, origLng] = val.split(',')
-    const res = await getTravelEstimates(activity.latitude, activity.longitude, parseFloat(origLat), parseFloat(origLng))
-    setDynamicRouting(res)
-    setIsLoadingRoute(false)
+    const selectedLoc = locations.find(loc => `${loc.lat},${loc.lng}` === val)
+    const originName = selectedLoc ? selectedLoc.name : 'Ubicación seleccionada'
+
+    await updateActivityOrigin(currentActivity.id, parseFloat(origLat), parseFloat(origLng), originName)
   }
 
   const handleSearchOrigin = async (e: React.MouseEvent) => {
@@ -167,12 +229,10 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
     setSearchResults([])
     setCustomOriginName(place.display_name)
     setIsLoadingRoute(true)
-    const res = await getTravelEstimates(activity.latitude, activity.longitude, parseFloat(place.lat), parseFloat(place.lon))
-    setDynamicRouting(res)
-    setIsLoadingRoute(false)
+    await updateActivityOrigin(currentActivity.id, parseFloat(place.lat), parseFloat(place.lon), place.display_name)
   }
 
-  const googleMapsUrl = `https://www.google.com/maps?q=${activity.latitude},${activity.longitude}`
+  const googleMapsUrl = `https://www.google.com/maps?q=${currentActivity.latitude},${currentActivity.longitude}`
 
   if (isEditing) {
     return (
@@ -184,7 +244,7 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
         <form onSubmit={handleEditSubmit} className="space-y-3 text-sm">
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Título</label>
-            <input name="title" defaultValue={activity.title} required className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <input name="title" defaultValue={currentActivity.title} required className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
           </div>
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Día</label>
@@ -210,7 +270,7 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Precio Estimado</label>
             <div className="flex gap-2">
-              <input name="price" type="text" inputMode="decimal" defaultValue={activity.price} className="flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <input name="price" type="text" inputMode="decimal" defaultValue={currentActivity.price} className="flex-1 rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
               <select name="currency" defaultValue="USD" className="w-20 sm:w-24 rounded-md border border-slate-700 bg-slate-950 px-2 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
                 <option value="USD">USD</option>
                 <option value="COP">COP</option>
@@ -221,11 +281,11 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
 
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Enlace Web (Opcional)</label>
-            <input name="website_url" type="url" defaultValue={activity.website_url || ''} placeholder="https://..." className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <input name="website_url" type="url" defaultValue={currentActivity.website_url || ''} placeholder="https://..." className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
           </div>
           <div>
             <label className="text-slate-400 text-xs mb-1 block">Descripción / Notas</label>
-            <textarea name="description" defaultValue={activity.description} rows={2} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+            <textarea name="description" defaultValue={currentActivity.description} rows={2} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
           </div>
           <button type="submit" disabled={isSaving} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-md transition-colors disabled:opacity-50 flex justify-center items-center gap-2 mt-2">
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Guardar y Renegociar'}
@@ -237,7 +297,7 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
 
   return (
     <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 shadow-md relative overflow-hidden group hover:border-slate-600 transition-colors w-full">
-      <div className={`absolute top-0 left-0 w-1 h-full ${activity.status === 'PENDIENTE' ? 'bg-yellow-500' : 'bg-purple-500'}`}></div>
+      <div className={`absolute top-0 left-0 w-1 h-full ${currentActivity.status === 'PENDIENTE' ? 'bg-yellow-500' : 'bg-purple-500'}`}></div>
       
       <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 pl-2 pb-2 rounded-bl-lg z-10">
         <button onClick={() => setIsEditing(true)} className="p-1.5 text-slate-400 hover:text-blue-400 bg-slate-800 rounded-md transition-colors" title="Editar Propuesta">
@@ -248,23 +308,23 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
         </button>
       </div>
 
-      <h4 className="font-semibold text-white text-lg pr-16">{activity.title} {activity.status === 'PENDIENTE' ? '(Pendiente)' : ''}</h4>
+      <h4 className="font-semibold text-white text-lg pr-16">{currentActivity.title} {currentActivity.status === 'PENDIENTE' ? '(Pendiente)' : ''}</h4>
       
-      {activity.start_time && (
-        <p className={`text-xs font-medium mt-1 mb-2 flex items-center gap-1 ${activity.status === 'PENDIENTE' ? 'text-yellow-400' : 'text-purple-400'}`}>
+      {currentActivity.start_time && (
+        <p className={`text-xs font-medium mt-1 mb-2 flex items-center gap-1 ${currentActivity.status === 'PENDIENTE' ? 'text-yellow-400' : 'text-purple-400'}`}>
           <Clock className="h-3 w-3" />
-          {new Date(activity.start_time).toLocaleString('es-CO', { timeZone: 'America/Bogota', weekday: 'long' })} • {defaultTime} {activity.duration_minutes ? ` - ${defaultEndTime}` : ''}
+          {new Date(currentActivity.start_time).toLocaleString('es-CO', { timeZone: 'America/Bogota', weekday: 'long' })} • {defaultTime} {currentActivity.duration_minutes ? ` - ${defaultEndTime}` : ''}
         </p>
       )}
 
-      <p className="text-sm text-slate-400 mb-4">{activity.description}</p>
+      <p className="text-sm text-slate-400 mb-4">{currentActivity.description}</p>
 
       <div className="flex flex-wrap gap-2 mb-4 text-xs">
         <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 bg-blue-950/40 px-2.5 py-1.5 rounded-md border border-blue-900/50 transition-colors">
           <MapPin className="h-3.5 w-3.5" /> Abrir en Maps
         </a>
-        {activity.website_url && (
-          <a href={activity.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 px-2.5 py-1.5 rounded-md border border-emerald-900/50 transition-colors">
+        {currentActivity.website_url && (
+          <a href={currentActivity.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 px-2.5 py-1.5 rounded-md border border-emerald-900/50 transition-colors">
             <Globe className="h-3.5 w-3.5" /> Ver web
           </a>
         )}
@@ -273,15 +333,15 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
       <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
         <div className="flex items-center gap-1.5 text-slate-300 bg-slate-950/50 p-2 rounded-md border border-slate-800">
           <MapPin className="h-4 w-4 text-slate-500 shrink-0" />
-          <span className="truncate" title={activity.place_id}>{activity.place_id.split(',')[0]}</span>
+          <span className="truncate" title={currentActivity.place_id}>{currentActivity.place_id.split(',')[0]}</span>
         </div>
         <div className="flex items-center gap-1.5 text-slate-300 bg-slate-950/50 p-2 rounded-md border border-slate-800">
           <DollarSign className="h-4 w-4 text-emerald-500 shrink-0" />
-          <span>{activity.price > 0 ? `${activity.price} USD` : 'Gratis'}</span>
+          <span>{currentActivity.price > 0 ? `${currentActivity.price} USD` : 'Gratis'}</span>
         </div>
       </div>
 
-      {locations.length > 0 && activity.latitude && (
+      {locations.length > 0 && currentActivity.latitude && (
         <div className="mb-3 bg-slate-950/50 p-3 rounded-lg border border-slate-800">
           <label className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1.5 block">Calcular ruta desde:</label>
           <select value={origin} onChange={handleOriginChange} className="w-full bg-slate-900 border border-slate-700 rounded-md text-xs text-slate-300 px-2 py-1.5 focus:outline-none focus:border-blue-500 mb-2">
@@ -332,7 +392,7 @@ export function ActivityVoteCard({ activity, currentUserId, routing, locations =
         </div>
       )}
 
-      {activity.status === 'PENDIENTE' && (
+      {currentActivity.status === 'PENDIENTE' && (
         <div className="pt-3 border-t border-slate-800">
           {isCreator && !myVote ? (
             <div className="flex items-center justify-center gap-2 text-sm text-yellow-400 bg-yellow-900/10 py-2 rounded-md">

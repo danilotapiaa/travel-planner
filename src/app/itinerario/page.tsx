@@ -25,7 +25,11 @@ export default async function ItineraryPage() {
     (routeActivities || []).map(async (act) => {
       let routes = null
       if (act.latitude && act.longitude) {
-        routes = await getTravelEstimates(act.latitude, act.longitude)
+        if (act.route_origin_lat && act.route_origin_lng) {
+          routes = await getTravelEstimates(act.latitude, act.longitude, parseFloat(act.route_origin_lat), parseFloat(act.route_origin_lng))
+        } else {
+          routes = await getTravelEstimates(act.latitude, act.longitude)
+        }
       }
       const actDate = act.start_time ? new Date(act.start_time) : new Date('2026-07-17T12:00:00')
       return {
@@ -82,7 +86,6 @@ export default async function ItineraryPage() {
 
       <div className="space-y-12">
         {sortedDates.map((dateStr) => {
-          // CORRECCIÓN: Añadido (a: any, b: any)
           const dayEvents = groupedEvents[dateStr].sort((a: any, b: any) => a.time.localeCompare(b.time))
           const formattedDate = format(parseISO(dateStr), "EEEE, d 'de' MMMM", { locale: es })
 
@@ -97,7 +100,6 @@ export default async function ItineraryPage() {
               </div>
 
               <div className="space-y-6">
-                {/* CORRECCIÓN: Añadido (event: any) */}
                 {dayEvents.map((event: any) => {
                   const { icon: Icon, color, bg, border } = getEventStyles(event.status === 'PENDIENTE' ? 'reminder' : event.type || 'activity')
                   
