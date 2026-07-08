@@ -47,7 +47,6 @@ export default async function ItineraryPage() {
     { id: 'fli-1', isFixed: true, type: 'flight', date: '2026-07-15', time: '16:40', endTime: '17:35', title: 'Vuelo UIO - GYE', description: 'Avianca AV1664' },
     { id: 'fli-2', isFixed: true, type: 'flight', date: '2026-07-15', time: '18:50', endTime: '20:45', title: 'Vuelo GYE - BOG', description: 'Llegada a Terminal 1' },
     { id: 'acc-1', isFixed: true, type: 'accommodation', date: '2026-07-15', time: '22:00', endTime: '23:00', title: 'Check-in Airbnb', description: '2717 Diagonal 61D' },
-    { id: 'rem-2', isFixed: true, type: 'reminder', date: '2026-07-16', time: '10:00', endTime: '11:00', title: 'Retirar Boletos', description: 'Recoger tickets físicos del concierto' },
     { id: 'con-1', isFixed: true, type: 'concert', date: '2026-07-16', time: '21:00', endTime: '23:30', title: 'Concierto Rosalía', description: 'Movistar Arena Bogotá' },
     { id: 'rem-3', isFixed: true, type: 'reminder', date: '2026-07-19', time: '08:25', endTime: '11:25', title: 'Salida al Aeropuerto BOG', description: '3 horas de anticipación' },
     { id: 'fli-3', isFixed: true, type: 'flight', date: '2026-07-19', time: '11:25', endTime: '13:05', title: 'Vuelo BOG - UIO', description: 'Avianca AV117' },
