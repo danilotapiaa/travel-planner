@@ -4,19 +4,18 @@ import { ArrowUpRight } from 'lucide-react'
 // Función para obtener tasas actualizadas con validación de seguridad
 async function getExchangeRates() {
   try {
-    const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=COP,MXN', {
+    const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=COP', {
       next: { revalidate: 3600 }
     })
     const data = await res.json()
-    
+
     // Verificamos que 'rates' exista y tenga los valores antes de retornar
     return {
-      COP: data.rates?.COP ?? 3356,
-      MXN: data.rates?.MXN ?? 17
+      COP: data.rates?.COP ?? 3356
     }
   } catch (error) {
     console.error("Error obteniendo tasas:", error)
-    return { COP: 3356, MXN: 17 }
+    return { COP: 3356 }
   }
 }
 
@@ -52,24 +51,13 @@ export async function BudgetWidget() {
         <p className="text-3xl font-bold text-white mt-1">US$ {totalUSD.toFixed(2)}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-          <p className="text-[10px] text-slate-500 uppercase font-semibold">Pesos Colombianos</p>
-          <p className="text-lg font-bold text-white mt-1">
-            $ {(totalUSD * rates.COP).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
-          </p>
-          {/* Aquí el fix: usamos (rates.COP || 0) para evitar el undefined */}
-          <p className="text-[10px] text-slate-600 mt-1">Tasa: {(rates.COP || 0).toLocaleString('es-CO')}/USD</p>
-        </div>
-        
-        <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-          <p className="text-[10px] text-slate-500 uppercase font-semibold">Pesos Mexicanos</p>
-          <p className="text-lg font-bold text-white mt-1">
-            MXN {(totalUSD * rates.MXN).toLocaleString('es-MX', { maximumFractionDigits: 2 })}
-          </p>
-          {/* Aquí el fix: usamos (rates.MXN || 0) para evitar el undefined */}
-          <p className="text-[10px] text-slate-600 mt-1">Tasa: {(rates.MXN || 0).toFixed(2)}/USD</p>
-        </div>
+      <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+        <p className="text-[10px] text-slate-500 uppercase font-semibold">Pesos Colombianos</p>
+        <p className="text-lg font-bold text-white mt-1">
+          $ {(totalUSD * rates.COP).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+        </p>
+        {/* Aquí el fix: usamos (rates.COP || 0) para evitar el undefined */}
+        <p className="text-[10px] text-slate-600 mt-1">Tasa: {(rates.COP || 0).toLocaleString('es-CO')}/USD</p>
       </div>
     </div>
   )

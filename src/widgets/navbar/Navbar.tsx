@@ -1,6 +1,6 @@
 import { createClient } from '@/shared/api/supabase/server'
 import { logout } from '@/app/login/actions'
-import { LogOut, Map, Plane, CalendarDays } from 'lucide-react'
+import { LogOut, Map, Plane, CalendarDays, Wallet } from 'lucide-react'
 import Link from 'next/link'
 
 export async function Navbar() {
@@ -27,6 +27,11 @@ export async function Navbar() {
                 <Plane className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Itinerario</span>
                 <span className="inline sm:hidden">Ruta</span>
+              </Link>
+              <Link href="/presupuesto" className="flex items-center gap-1 text-xs sm:text-sm font-medium text-slate-300 hover:text-emerald-400 py-4 sm:py-5 transition-colors border-b-2 border-transparent hover:border-emerald-500 whitespace-nowrap">
+                <Wallet className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Presupuesto</span>
+                <span className="inline sm:hidden">$</span>
               </Link>
             </div>
           </div>
